@@ -11,3 +11,5 @@ examples/*.js
 tests/
 browser/
 demos/
+*.db
+*.md
