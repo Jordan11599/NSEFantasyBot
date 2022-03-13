@@ -11,6 +11,3 @@ examples/*.js
 tests/
 browser/
 demos/
-
-
-dist/
