@@ -1,2 +1,3 @@
 # NSEFantasyBot
-CS:GO Fantasy Bot for NSE
+
+CS:GO Fantasy Bot for NSE.
