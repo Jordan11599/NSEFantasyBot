@@ -1,0 +1,13 @@
+{
+  "name": "nsefantasybot",
+  "version": "2.0.0",
+  "description": "NSEFantasyBot",
+  "main": "dumpfile.ts",
+  "author": "Jordan Betts",
+  "license": "MIT",
+  "dependencies": {
+    "demofile": "file:..",
+    "sqlite3": "^5.0.2",
+    "typescript": "~4.4.3"
+  }
+}

@@ -1,0 +1,115 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+jobs:
+  build:
+    name: Build and test
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [14.x, 16.x]
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v1
+        with:
+          node-version: ${{ matrix.node-version }}
+      - name: Install packages
+        run: npm ci
+      - name: Build TypeScript
+        run: npm run build
+      - name: Cache demos
+        id: cache-demos
+        uses: actions/cache@v2
+        with:
+          path: demos
+          key: demos-${{ hashFiles('demos/download.sh', 'demos/SHA256SUMS') }}
+      - name: Download demos for integration test
+        if: steps.cache-demos.outputs.cache-hit != 'true'
+        working-directory: ./demos
+        run: ./download.sh
+      - name: Run tests
+        run: npm test -- --coverage
+      - uses: actions/upload-artifact@v2
+        with:
+          name: coverage
+          path: coverage/
+      - name: Create package tarball
+        run: npm pack
+      - uses: actions/upload-artifact@v2
+        with:
+          name: package
+          path: "*.tgz"
+      - name: Test package tarball with an example demo file
+        working-directory: examples
+        run: |
+          npm uninstall demofile
+          npm install ../demofile-*.tgz
+          for file in *.ts
+          do
+            echo "Running example: $file..."
+            npx ts-node "$file" ../demos/pc419-vs-chiefs-mirage.dem
+          done
+
+  lint:
+    name: Linting
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v1
+        with:
+          node-version: 14.x
+      - run: npm ci
+      - run: npm run build
+      - run: npm run format:check
+      - run: npm run lint
+
+  deploy:
+    needs: [build, lint]
+    if: github.ref == 'refs/heads/master'
+    name: Deploy
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Use Node.js
+        uses: actions/setup-node@v1
+        with:
+          node-version: 14.x
+          registry-url: "https://registry.npmjs.org"
+      - name: Install packages
+        run: npm ci
+      - name: Pull version from package.json
+        run: |
+          VERSION=$(jq -r '.version' package.json)
+          echo "Current package version: $VERSION"
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          echo "TAG=v$VERSION" >> $GITHUB_ENV
+      - uses: mukunku/tag-exists-action@v1.0.0
+        id: checkTag
+        with:
+          tag: ${{ env.TAG }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Ensure release notes are available
+        if: ${{ steps.checkTag.outputs.exists == 'false' }}
+        run: grep -Fxq "### $VERSION (`date -u '+%Y-%m-%d'`)" RELEASE_NOTES.md || exit 1
+      - name: Version package and tag
+        if: ${{ steps.checkTag.outputs.exists == 'false' }}
+        run: |
+          git config --global user.name 'GitHub Actions'
+          git config --global user.email 'github-actions@users.noreply.github.com'
+          npm version --allow-same-version $VERSION
+      - name: Publish to registry
+        if: ${{ steps.checkTag.outputs.exists == 'false' }}
+        run: npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

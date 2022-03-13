@@ -1,0 +1,16 @@
+.clinic/
+.vscode/
+.protoc/
+coverage/
+GameTracking-CSGO/
+node_modules/
+*.log
+*.ignore
+*.tgz
+examples/*.js
+tests/
+browser/
+demos/
+
+
+dist/
