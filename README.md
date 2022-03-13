@@ -52,6 +52,7 @@ Finished.
 ```
 
 #### Reference Links
+- [Public NSE CS:GO Demos](https://demos.epiclan.co.uk/NSE/)
 - [Original Github Repository (Saul Rennison)](https://github.com/saul/demofile)
 - [CS:GO Game Events - AlliedModders Wiki](https://wiki.alliedmods.net/Counter-Strike:_Global_Offensive_Events)
 
